@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melyik a te állatod?</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .quiz-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 800px;
+        }
+
+        #progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #question {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .image-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            justify-items: center;
+        }
+
+        img {
+            width: 200px;
+            height: 200px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            object-fit: cover;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #animal-info {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+
+        .animal-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .animal-image {
+            max-width: 300px;
+            height: auto; /* Ez biztosítja, hogy a magasság automatikusan illeszkedjen */
+            border-radius: 8px;
+            object-fit: contain; /* Megőrzi az egész képet és arányosan illeszti */
+        }
+
+        .animal-description {
+            text-align: left;
+            max-width: 450px;
+        }
+
+        .animal-description h2 {
+            margin-top: 0;
+            color: #3498db;
+        }
+
+        .animal-description p {
+            font-size: 1em;
+            line-height: 1.5;
+        }
+
+        .gallery-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #choose-stone {
+            margin-bottom: 30px; /* További tér a kövek előtt */
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .gallery {
+            display: flex;
+            flex-wrap: wrap; /* A kövek új sorba törhetnek, de középre igazítva maradnak */
+            justify-content: center; /* Középre igazítja a köveket */
+            gap: 10px; /* Kövek közötti távolság */
+            width: 100%;
+        }
+
+        .gallery-item img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-item img:hover {
+            transform: scale(1.1);
+        }
+
+        .caption {
+            margin-top: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .popup img {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            margin: 10px;
+        }
+
+        .popup h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .popup button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .popup button:hover {
+            background-color: #2980b9;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+        #back-button {
+    position: absolute; /* A boxon belül abszolút pozicionálás */
+    top: 10px; /* Távolság a box tetejétől */
+    right: 10px; /* Távolság a box jobb szélétől */
+    background-color: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 10;
+}
+
+#back-button:hover {
+    background-color: #2980b9;
+}
+    </style>
+</head>
+<body>
+    <div id="overlay"></div>
+    <div class="popup" id="popup">
+        <h3 id="popup-text"></h3>
+        <div id="popup-images"></div>
+        <button onclick="closePopup()">Bezárás</button>
+    </div>
+    <div class="quiz-container">
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="question">Válassz egy állatot!</div>
+        <div class="image-options" id="image-options">
+            <!-- Képek dinamikusan töltődnek -->
+        </div>
+        <div id="animal-info" style="display: none; position: relative;">
+            <button id="back-button" onclick="goBack()">Vissza</button>
+            <div class="animal-content">
+                <img src="" alt="Állat képe" class="animal-image" id="animal-image">
+                <div class="animal-description">
+                    <h2 id="animal-name"></h2>
+                    <div id="animal-description"></div>
+                </div>
+            </div>
+            <div class="gallery-container">
+                <div id="choose-stone">Válassz még egy követ a kiválasztott állatod mellé!</div>
+                <div class="gallery" id="gallery">
+                    <!-- Kövek galériája -->
+                    <!-- Kövek dinamikusan töltődnek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const animals = [
+            { 
+                name: "Gorilla", 
+                imgSrc: "képek quiz/Állatok/gorilla.jpg", 
+                description: `
+                    <p><strong>Gorilla: Az erdő királya</strong></p>
+                    <p>A gorillák Afrika erdeiben élnek, ahol napjuk nagy részét evéssel, pihenéssel és egymás ápolásával töltik. Étrendjük igazi vegetáriánus lakoma: levelek, gyümölcsök, fakéreg és hajtások szerepelnek az étlapon, bár néha megcsócsálnak néhány rovarfélét is.</p>
+                    <p><strong>Érdekes tény:</strong> A gorillák bámulatosan erősek! Egy felnőtt hím gorilla (a híres "ezüsthátú") akár tízszer erősebb lehet egy átlagos embernél. Mégis, jellemzően békeszerető teremtmények, akik csak akkor mutatnak erőt, ha veszélyt éreznek.</p>
+                    <p>Legközelebb, ha a természet lenyűgöző lakóira gondolsz, jusson eszedbe: a gorillák a szelíd erő és a családi harmónia megtestesítői! 🦍🌿</p>
+                `,
+                stones: [
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Égkő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Lávakő.jpeg" },
+                    { name: "Homokkő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Homokkő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Pink.jpeg" },
+                    { name: "Kagylókő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Kagylókő.jpeg" },
+                    { name: "Esőerdőzöld kő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Esőerdőzöld kő.jpeg" },
+                    { name: "Ocellus kő", imgSrc: "képek quiz/Állatok kövei/Gorilla/Ocellus kő.jpeg" },
+                ]
+            },
+            { 
+                name: "Cetcápa", 
+                imgSrc: "képek quiz/Állatok/Cetcápa.jpg", 
+                description: `
+                    <p><strong>Cetcápa: A tenger óriása!</strong></p>
+                    <p>A cetcápa, a világ legnagyobb hala, békésen szeli át az óceánok mély kékjét. Napjai a lassú, méltóságteljes úszás és táplálkozás jegyében telnek. Főként apró planktonokat, krilleket és halikrákat szűr ki hatalmas szájával, miközben tátott szájjal halad előre a vízben.</p>
+                    <p><strong>Érdekes tény:</strong> Annak ellenére, hogy akár 12-18 méteresre is megnőhet, a cetcápa teljesen ártalmatlan az emberre. Kíváncsi és barátságos természetű, néha még a búvárokat is közel engedi magához, mintha csak ismerkedni akarna.</p>
+                    <p>A cetcápa a természet csodás példája arra, hogy a méret és az erő nem mindig jár együtt a félelmetességgel! 🐋🌊</p>
+                `,
+                stones: [
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Aquakék kő.jpg" },
+                    { name: "Tengerifű kő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Fenyőzöld kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Lávakő.jpeg" },
+                    { name: "Mélykék kő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Mélykék kő.jpg" },
+                    { name: "Ocellus kő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Ocellus kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Cetcápa/Pink kő.jpeg" },
+                ]
+            },
+            { 
+                name: "Farkas", 
+                imgSrc: "képek quiz/Állatok/farkass.jpg", 
+                description: `
+                    <p><strong>Farkas: Az erdő mestere!</strong></p>
+                    <p>A farkasok az erdők és tundrák titokzatos, éjjeli vadászai, akik falkában élnek és dolgoznak együtt. Napjaik a vadászat, a falkatagok ápolása és a területük védelme körül forognak. A falkában élő farkasok szoros kapcsolatot ápolnak egymással, és a közös munkával biztosítják a túlélést.</p>
+                    <p><strong>Érdekes tény:</strong> A farkasok kiváló kommunikátorok! Morgások, vonyítások és testbeszéd segítségével koordinálják a vadászatot, és hívják össze a falkát. A híres vonyításuk valójában nagyon fontos szerepet játszik abban, hogy meghatározzák területüket és kapcsolatot tartsanak a falkatagokkal.</p>
+                    <p>A farkasok igazi társas lények, akiknek titkos, de erős kötelékei a túlélés kulcsa! 🐺🌲</p>
+                `,
+                stones: [
+                    { name: "Holdkő", imgSrc: "képek quiz/Állatok kövei/Farkas/Holdkő.jpg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Farkas/Lávakő.jpg" },
+                    { name: "Virágos som kő", imgSrc: "képek quiz/Állatok kövei/Farkas/Pompásvirágú som kő.jpg" },
+                    { name: "Sivatagi kő", imgSrc: "képek quiz/Állatok kövei/Farkas/Sivatagi kő.jpg" },
+                    { name: "Fenyőzöld kő", imgSrc: "képek quiz/Állatok kövei/Farkas/Fenyőzöld kő.jpg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Farkas/Égkő.jpg" }
+                ]
+            },
+            { 
+                name: "Fóka", 
+                imgSrc: "képek quiz/Állatok/fóka.jpg", 
+                description: `
+                    <p><strong>Fóka: A tengeri akrobata!</strong></p>
+                    <p>A fókák a tengerpartok és jégtáblák vidám lakói, akik éppúgy szeretnek a vízben játszani, mint a parton napozni. Napi rutinjuk víz alatti vadászatból, úszásból és pihenésből áll. A fókák halakkal, puhatestűekkel táplálkoznak, miközben hihetetlen sebességgel és ügyességgel mozognak a vízben.</p>
+                    <p><strong>Érdekes tény:</strong> A fókák képesek hosszú ideig visszatartani a levegőt, akár 20 percig is, miközben a mélyben vadásznak. Emellett egyes fókafajok nagyon okosak, és képesek megtanulni trükköket vagy akár eszközöket használni, hogy segítsenek a táplálékszerzésben!</p>
+                    <p>A fókák valódi vízi akrobaták, akik a tengeri világ szórakoztató és ügyes lakói!  Hívhatnánk őket vízi kutyáknak is! 🦦🌊</p>
+                `,
+                stones: [
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Fóka/Aquakék kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Fóka/Égkő.jpeg" },
+                    { name: "Korallzátony kő", imgSrc: "képek quiz/Állatok kövei/Fóka/Korallzátony kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Fóka/Pink.jpeg" },
+                    { name: "Tengerhab kő", imgSrc: "képek quiz/Állatok kövei/Fóka/Tengerhab kő.jpeg" },
+                    { name: "Tengerifű kő", imgSrc: "képek quiz/Állatok kövei/Fóka/Tengerifű kő.jpeg" }
+                ]
+            },
+            { 
+                name: "Pingvin", 
+                imgSrc: "képek quiz/Állatok/pingvin.jpg", 
+                description: `
+                    <p><strong>Pingvin: A szárnyas kis mókamester!</strong></p>
+                    <p>A pingvinek a hideg vizek vidám, szorgos lakói, akik bár nem tudnak repülni, a vízben igazi szárnyas mesterek. Napjaik többségét halászat, úszás és fiókáik nevelése tölti. A szárazföldön ügyetlenül csúszkálnak, de a víz alatt elképesztő gyorsasággal és fürgeséggel mozognak, mintha halak lennének.</p>
+                    <p><strong>Érdekes tény:</strong> A pingvinek rendkívül hűségesek partnerükhöz. Egyes fajok életük végéig ugyanazt a párt választják, és közösen nevelik fel a fiókáikat.</p>
+                    <p>A pingvinek a szeretet, a család és a vidámság igazi szimbólumai, akik bár nem repülnek, a szívünkben mindig szárnyalnak! 🐧❄️</p>
+                `,
+                stones: [
+                    { name: "Blackout kő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Blackout kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Égkő.jpeg" },
+                    { name: "Iglookék kő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Iglookék kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Pink kő.jpeg" },
+                    { name: "Emperorkő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Emperorkő.jpeg" },
+                    { name: "Tengerhab kő", imgSrc: "képek quiz/Állatok kövei/Pingvin/Tengerhab kő.jpeg" }
+                ]
+            },
+            { 
+                name: "Teknős", 
+                imgSrc: "képek quiz/Állatok/Tekiii.jpg", 
+                description: `
+                    <p><strong>Tengeri teknős: A csendes utazó!</strong></p>
+                    <p>A tengeri teknősök a világ óceánjainak nyugodt vándorai, akik életük során akár 20 000 kilométert is képesek megtenni. Napjaik a tenger fenekén pihenéssel, táplálkozással és hosszú úszásokkal telnek. Főként algákkal és vízi növényekkel táplálkoznak, de a fiatal teknősök időnként kisebb állatokkal is étkeznek.</p>
+                    <p><strong>Érdekes tény:</strong> A tengeri teknősök hihetetlen navigációs képességekkel rendelkeznek. Évtizedekig képesek visszatalálni ugyanahhoz a partvidékhez, ahol megszülettek, hogy ott rakják le saját tojásaikat.</p>
+                    <p>A tengeri teknősök az óceánok bölcs vándorai, akik titokzatos utazásaikkal mindig lenyűgöznek bennünket! 🐢🌊</p>
+                `,
+                stones: [
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Aquakék kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Égkő.jpeg" },
+                    { name: "Fehér howlitkő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Fehér howlitkő.jpeg" },
+                    { name: "Kagyló kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Kagyló kő.jpeg" },
+                    { name: "Korallzátony kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Korallzátony kő.jpeg" },
+                    { name: "Kristálykék kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Kristálykék kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Lávakő.jpeg" },
+                    { name: "Mélykék kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Mélykék kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Pink kő.jpeg" },
+                    { name: "Tengerifű kő", imgSrc: "képek quiz/Állatok kövei/Tengeri teknős/Tengerfű kő.jpeg" },
+                ]
+            },
+            { 
+                name: "Elefánt", 
+                imgSrc: "képek quiz/Állatok/Elefááánt.jpg", 
+                description: `
+                    <p><strong>Elefánt: A szavanna óriása!</strong></p>
+                    <p>Az elefántok a föld legnagyobb szárazföldi állatai, akik az afrikai szavannák és ázsiai dzsungelek királyai. Napjaik a családjuk körüli teendőkkel telnek: fák leveleit és ágait eszik, vizet keresnek, és napoznak, hogy megőrizzék hatalmas erejüket. Az elefántok erőteljes törzseik révén rendkívül szoros családi kapcsolatokat ápolnak.</p>
+                    <p><strong>Érdekes tény:</strong> Az elefántok rendkívül intelligens állatok, akik képesek megjegyezni embereket és más állatokat, sőt, érzelmi kötődéseket is kialakítanak. A gyászolásukról is híresek, mivel ha egy elefánt társuk elpusztul, sokáig visszatérnek a testhez, hogy tiszteletüket tegyék.</p>
+                    <p>Az elefántok az erő és a szeretet szimbólumai, akik hatalmas lépteikkel és szelíd szívükkel örökre lenyűgöznek minket!🐘🌿</p>
+                `,
+                stones: [
+                    { name: "Kenyai orchidea kő", imgSrc: "képek quiz/Állatok kövei/Elefánt/KenyaOrchidea kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Égkő.jpeg" },
+                    { name: "Fehér howlit kő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Fehér howlite kő.jpeg" },
+                    { name: "Folyókék kő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Folyókék kő.jpeg" },
+                    { name: "Kulcskő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Kulcskő.jpeg" },
+                    { name: "Sivatagi kő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Sivatagi kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Elefánt/Lávakő.jpeg" },
+                ]
+            },
+            { 
+                name: "Delfin",
+                imgSrc: "képek quiz/Állatok/Delfiiin.jpg",
+                description: `
+                    <p><strong>Delfin: Az óceán mosolygós bajnoka!</strong></p>
+                    <p>A delfinek az óceánok játékos és intelligens lakói, akik napjaikat vadászattal, úszással és csapattársaikkal való szoros együttműködéssel töltik. Főként halakkal és tintahalakkal táplálkoznak, miközben fürge mozgásukkal és ultrahangos kommunikációjukkal biztosítják a zsákmányukat.</p>
+                    <p><strong>Érdekes tény:</strong> A delfinek az egyik legintelligensebb állatok közé tartoznak, és képesek megérteni összetett problémákat, felismerni magukat tükörben, sőt, még különleges hangokkal is hívni egymást, mint mi egy névvel!</p>
+                    <p>A delfinek a természet csupa szív és csupa ész lakói, akik mosolyt csalnak mindenki arcára, aki csak találkozik velük! 🐬</p>
+                `,
+                stones: [
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Aquakék kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Delfin/Égkő.jpeg" },
+                    { name: "Kristálykék kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Cristállykék kő.jpeg" },
+                    { name: "Tengerifű kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Fenyőzöld kő.jpeg" },
+                    { name: "Iglookék kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Iglookék kő.jpeg" },
+                    { name: "Korallzátony kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Korallzátony kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Delfin/Lávakő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Pink kő.jpeg" },
+                    { name: "Tengerhab kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Tengerhab kő.jpeg" },
+                    { name: "Visszhang kő", imgSrc: "képek quiz/Állatok kövei/Delfin/Visszhanglila kő.jpeg" },
+                ]
+            },
+            { 
+                name: "Lajhár", 
+                imgSrc: "képek quiz/Állatok/Lajháár.jpg", 
+                description: `
+                    <p><strong>Lajhár: A lazaság nagymestere!</strong></p>
+                    <p>A lajhárok a trópusi erdők békés lakói, akik az időt nem sietik el. Napjaik nagy részét a fákon lógva töltik, lassan mozognak, és levelekkel, gyümölcsökkel táplálkoznak. Lassúságuk nemcsak jellegzetességük, hanem túlélési stratégiájuk is: így kerülik el a ragadozók figyelmét.</p>
+                    <p><strong>Érdekes tény:</strong> A lajhárok bundájában egész mini ökoszisztéma élhet! Algák, amelyek zöldes árnyalatot adnak a szőrüknek, és különböző rovarok találhatók ott, ezáltal a természet igazi „mozgó kertjeivé” válnak.</p>
+                    <p>A lajhárok arra emlékeztetnek minket, hogy néha érdemes lassítani, és élvezni az élet apró örömeit! 🦥🌿</p>
+                `,
+                stones: [
+                    { name: "Esőerdőzöld kő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Esőerdőzöld kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Égkő.jpeg" },
+                    { name: "Kagylókő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Kagylókő.jpeg" },
+                    { name: "Homokkő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Homokkő.jpeg" },
+                    { name: "Mélykék kő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Mélykék kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Pink.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Lajhár/Lávakő.jpeg" },
+                    ]
+            },
+            { 
+                name: "Jegesmedve", 
+                imgSrc: "képek quiz/Állatok/Jegessmedve.jpg", 
+                description: `
+                    <p><strong>Jegesmedve: Az Északi-sark koronázatlan királya!</strong></p>
+                    <p>A jegesmedvék a fagyos tundrák és jégmezők hatalmas ragadozói, akik napjaikat vadászattal, úszással és pihenéssel töltik. Főként fókákra vadásznak, miközben kiváló úszóként akár több órán keresztül is képesek a jeges vízben haladni. Vastag bundájuk és zsírrétegük tökéletesen megvédi őket a hidegtől.</p>
+                    <p><strong>Érdekes tény:</strong> A jegesmedvék bundája valójában nem fehér, hanem áttetsző! A szőrszálak üregesek, így a napfény visszaverődése miatt tűnik fehérnek, ami segít beleolvadni a hó és a jég világába.</p>
+                    <p>A jegesmedvék az északi vadon erőteljes és magányos urai, akik alkalmazkodóképességükkel és szépségükkel mindenkit lenyűgöznek! 🐻‍❄️</p>
+                `,
+                stones: [
+                    { name: "Pink sarki fény kő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Északifénypink kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Égkő.jpeg" },
+                    { name: "Gleccserkék kő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Gleccserkék kő.jpeg" },
+                    { name: "Iglookék kő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Iglookék kő.jpeg" },
+                    { name: "Papillae kő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Papillae kő.jpeg" },
+                    { name: "Sarkkörfehér kő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Sarkkörfehér kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Jegesmedve/Lávakő.jpeg" },
+                    ]
+            },
+            { 
+                name: "Cápa", 
+                imgSrc: "képek quiz/Állatok/Cááápa.jpg", 
+                description: `
+                    <p><strong>Cápa: Az óceán ősi ragadozója!</strong></p>
+                    <p>A cápák az óceánok ikonikus lakói, akik már több mint 400 millió éve uralják a tengereket. Napjaik úszással, vadászattal és zsákmányuk – például halak, tintahalak vagy kisebb tengeri emlősök – elfogyasztásával telnek. Kiváló érzékszerveikkel és mozgékonyságukkal a tápláléklánc csúcsán állnak.</p>
+                    <p><strong>Érdekes tény:</strong> A cápák rendelkeznek egy különleges érzékszervvel, az úgynevezett Lorenzini-ampullákkal, amelyek segítségével elektromos mezőket érzékelnek. Ez lehetővé teszi, hogy még a homokban rejtőző zsákmányt is megtalálják.</p>
+                    <p>A cápák az óceánok titokzatos és nélkülözhetetlen ragadozói, akik félelmetes erejükkel és lenyűgöző képességeikkel évmilliók óta lenyűgöznek minket is! 🦈</p>
+                `,
+                stones: [
+                    { name: "Apex kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Apexkő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Cápa/Égkő.jpeg" },
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Aquakék kő.jpeg" },
+                    { name: "Fehér howlite kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Fehérhowlite kő.jpeg" },
+                    { name: "Korallzátony kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Korallzátony kő.jpeg" },
+                    { name: "Mélykék kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Mélykék kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Cápa/Lávakő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Pink kő.jpeg" },
+                    { name: "Ocelli kő", imgSrc: "képek quiz/Állatok kövei/Cápa/Ocelli kő.jpeg" },
+                    { name: "Tengerhabkő", imgSrc: "képek quiz/Állatok kövei/Cápa/Tengerhabkő.jpeg" },
+                    ]
+            },
+            { 
+                name: "Zsiráf", 
+                imgSrc: "képek quiz/Állatok/Zsiráff.jpg", 
+                description: `
+                    <p><strong>Zsiráf: A szavanna égimeszelője!</strong></p>
+                    <p>A zsiráfok Afrika ikonikus állatai, akik hosszú nyakukkal és karcsú testükkel kiemelkednek a szavanna többi lakója közül. Napjaikat a fák lombjainak legelésével és barangolással töltik. Hatalmas magasságuknak köszönhetően könnyedén elérik az akáciák legmagasabb ágain található zsenge leveleket, amelyek a kedvenc táplálékuk.</p>
+                    <p><strong>Érdekes tény:</strong> Bár hosszú nyakuk akár két méteres is lehet, a zsiráfoknak ugyanannyi csigolyájuk van a nyakukban, mint az embereknek – mindössze hét! Csak ezek a csigolyák sokkal nagyobbak és speciális módon kapcsolódnak egymáshoz.</p>
+                    <p>A zsiráfok az elegancia és nyugalom szimbólumai, akik méltóságteljes mozgásukkal és különleges megjelenésükkel mindig rabul ejtik a tekintetünket! 🦒🌿</p>
+                `,
+                stones: [
+                    { name: "Folyókék kő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Folyókék kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Égkő.jpeg" },
+                    { name: "Kenyai orchidea kő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Kenyai Orchidea.jpeg" },
+                    { name: "Fehér howlite kő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Fehér howlite kő.jpeg" },
+                    { name: "Kulcskő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Kulcskő.jpeg" },
+                    { name: "Szahara kő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Szahara kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Zsiráf/Lávakő.jpeg" },
+                    ]
+            },
+            { 
+                name: "Oroszlán", 
+                imgSrc: "képek quiz/Állatok/Oroszlááán.jpg", 
+                description: `
+                    <p><strong>Oroszlán: Az állatok királya!</strong></p>
+                    <p>Az oroszlánok, a „vadon királyai”, fenséges megjelenésükkel és erőteljes jelenlétükkel uralják az afrikai szavannákat. Főként éjszaka vadásznak, zsákmányuk többnyire zebrák, antilopok vagy bivalyok. Az oroszlánok társas állatok, falkában élnek, ahol a nőstények gondoskodnak a vadászatról, míg a hímek védelmezik a területet.</p>
+                    <p><strong>Érdekes tény:</strong> Az oroszlánok jellegzetes bömbölése több mint 8 kilométerre is elhallatszik, így kommunikálnak falkatársaikkal és tartják távol a betolakodókat.</p>
+                    <p>Az oroszlánok erőt, hatalmat és közösséget képviselnek, miközben méltóságteljes jelenlétükkel lenyűgöznek mindenkit! 🦁☀️</p>
+                `,
+                stones: [
+                    { name: "Büszkeség kő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Büszkeség kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Égkő.jpeg" },
+                    { name: "Kenyai orchidea kő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Kenyai Orchidea.jpeg" },
+                    { name: "Folyókék kő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Folyókék kő.jpeg" },
+                    { name: "Kulcskő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Kukcskő.jpeg" },
+                    { name: "Szahara kő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Szahara kő.jpeg" },
+                    { name: "Lávakő", imgSrc: "képek quiz/Állatok kövei/Oroszlán/Lávakő.jpeg" },
+                    ]
+            },
+            { 
+                name: "Manátusz", 
+                imgSrc: "képek quiz/Állatok/tengeritehén.jpg", 
+                description: `
+                    <p><strong>Manátusz: A tenger szelíd óriása!</strong></p>
+                    <p>A manátuszok, más néven tengeri tehenek, békés növényevők, akik a trópusi és szubtrópusi vizek lassú folyóiban és part menti területein élnek. Napjaikat a vízi növények fogyasztásával és lustálkodással töltik, miközben lassú tempóban úszkálnak. Súlyuk ellenére remekül mozognak a vízben, farokúszójuk erejével hajtva magukat.</p>
+                    <p><strong>Érdekes tény:</strong> A manátuszok rokonai a szárazföldön élő elefántoknak! Ráadásul évente akár 50 kilogramm vízi növényt is elfogyasztanak, ami fontos szerepet játszik az élőhelyük ökoszisztémájában.</p>
+                    <p>A manátuszok a nyugalom és béke élő szobrai, akik lassú tempójukkal és barátságos természetükkel mindenkit levesznek a lábukról! 🐋🌊</p>
+                `,
+                stones: [
+                    { name: "Aquakék kő", imgSrc: "képek quiz/Állatok kövei/Manátusz/Aquakék kő.jpeg" },
+                    { name: "Égkő", imgSrc: "képek quiz/Állatok kövei/Manátusz/Égkő.jpeg" },
+                    { name: "Korallzátony kő", imgSrc: "képek quiz/Állatok kövei/Manátusz/Korallzátony kő.jpeg" },
+                    { name: "Pink kő", imgSrc: "képek quiz/Állatok kövei/Manátusz/Pink.jpeg" },
+                    { name: "Tengerhabkő", imgSrc: "képek quiz/Állatok kövei/Manátusz/Tengerhab kő.jpeg" },
+                    ]
+            }
+        ];
+
+        let selectedAnimal = null;
+
+        const progressBar = document.getElementById("progress-bar");
+        const questionDiv = document.getElementById("question");
+        const imageOptionsDiv = document.getElementById("image-options");
+        const animalInfoDiv = document.getElementById("animal-info");
+        const animalImage = document.getElementById("animal-image");
+        const animalName = document.getElementById("animal-name");
+        const animalDescription = document.getElementById("animal-description");
+        const galleryDiv = document.getElementById("gallery");
+        const popup = document.getElementById("popup");
+        const popupText = document.getElementById("popup-text");
+        const popupImages = document.getElementById("popup-images");
+        const overlay = document.getElementById("overlay");
+
+        function updateProgressBar() {
+            progress += 100 / animals.length;
+            progressBar.style.width = progress + "%";
+        }
+
+        function showAnimalInfo(animal) {
+            selectedAnimal = animal;
+            questionDiv.style.display = "none";
+            imageOptionsDiv.style.display = "none";
+            animalInfoDiv.style.display = "flex";
+            animalImage.src = animal.imgSrc;
+            animalName.innerText = animal.name;
+            animalDescription.innerHTML = animal.description;
+            galleryDiv.innerHTML = '';
+            animal.stones.forEach(stone => {
+                const stoneItem = document.createElement("div");
+                stoneItem.classList.add("gallery-item");
+                const stoneImage = document.createElement("img");
+                stoneImage.src = stone.imgSrc;
+                stoneImage.alt = stone.name;
+                stoneImage.addEventListener("click", () => showPopup(stone));
+                const stoneCaption = document.createElement("div");
+                stoneCaption.classList.add("caption");
+                stoneCaption.textContent = stone.name;
+                stoneItem.appendChild(stoneImage);
+                stoneItem.appendChild(stoneCaption);
+                galleryDiv.appendChild(stoneItem);
+            });
+
+            updateProgressBar();
+        }
+
+        function goBack() {
+    selectedAnimal = null;
+    questionDiv.style.display = "block";
+    imageOptionsDiv.style.display = "grid";
+    animalInfoDiv.style.display = "none";
+}
+
+        function displayAnimalChoices() {
+            animals.forEach(animal => {
+                const img = document.createElement("img");
+                img.src = animal.imgSrc;
+                img.alt = animal.name;
+                img.addEventListener("click", () => showAnimalInfo(animal));
+                imageOptionsDiv.appendChild(img);
+            });
+        }
+
+        function showPopup(stone) {
+            overlay.style.display = "block";
+            popup.style.display = "block";
+            popupText.innerText = `
+            A te választásod: ${selectedAnimal.name} és ${stone.name} ötvözete.
+            Ezt fényképezd le és küldd el Domicának!
+            `;
+            popupImages.innerHTML = `
+                <img src="${selectedAnimal.imgSrc}" alt="${selectedAnimal.name}">
+                <img src="${stone.imgSrc}" alt="${stone.name}">
+            `;
+        }
+
+        function closePopup() {
+            overlay.style.display = "none";
+            popup.style.display = "none";
+        }
+
+        displayAnimalChoices();
+    </script>
+</body>
+</html>
